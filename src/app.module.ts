@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
@@ -18,16 +20,25 @@ import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 3300,
-      username: 'zb_db_admin',
-      password: '1',
-      database: 'zb_db',
-      entities: [User, Biller, Invoice, Customer, VatRate],
-      synchronize: true,
+    ConfigModule.forRoot({
+      isGlobal: true, // überall verfügbar, kein erneutes Importieren nötig
     }),
+
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'postgres',
+        host: config.get<string>('DB_HOST'),
+        port: parseInt(config.get<string>('DB_PORT') || '3300'),
+        username: config.get<string>('DB_USER'),
+        password: config.get<string>('DB_PASS'),
+        database: config.get<string>('DB_NAME'),
+        entities: [User, Biller, Invoice, Customer, VatRate],
+        synchronize: true, // ⚠️ in PROD meist false + Migrations nutzen
+      }),
+    }),
+
     UsersModule,
     AuthModule,
     BillerModule,
