@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rechnung</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: 'Arial', sans-serif;
+      font-size: 12px;
+      color: #333;
+    }
+
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 170px;
+      background-color: #f5ebe3;
+      padding: 30px 40px;
+      border-bottom: 3px solid #e6ddd3;
+      z-index: 1000;
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 80px;
+      background-color: #f5ebe3;
+      padding: 10px 40px;
+      font-size: 10px;
+      color: #777;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      z-index: 1000;
+    }
+
+    .content {
+      position: absolute;
+      top: 130px;
+      bottom: 80px;
+      left: 0;
+      right: 0;
+      padding: 40px;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: bold;
+      color: #3e2d24;
+      margin-bottom: 20px;
+    }
+
+    .addresses {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .address-block {
+      line-height: 1.6;
+    }
+
+    .right-block {
+      text-align: right;
+    }
+
+    .section {
+      margin-top: 40px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      color: #a33226;
+      border-bottom: 2px solid #a33226;
+      padding-bottom: 5px;
+      margin-bottom: 15px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    table thead {
+      background-color: #f2f2f2;
+    }
+
+    table th, table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    table th {
+      font-weight: bold;
+    }
+
+    .totals {
+      margin-top: 30px;
+      text-align: right;
+      line-height: 1.8;
+    }
+
+    .totals strong {
+      font-size: 14px;
+      display: block;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- HEADER -->
+  <div class="header">
+    <h1>RECHNUNG</h1>
+    <div class="addresses">
+      <div class="address-block">
+        <strong><%= biller.preName %> <%= biller.lastName %></strong><br />
+        <%= biller.street %> <%= biller.streetNumber %><br />
+        <%= biller.postcode %> <%= biller.town %><br />
+        <%= biller.country %>
+      </div>
+      <div class="right-block">
+        Rechnungsnr.: <%= invoice.invoiceNumber %><br />
+        Kundennr.: <%= customer.id %><br />
+        Datum: <%= new Date(invoice.invDate).toLocaleDateString('de-DE') %>
+      </div>
+    </div>
+  </div>
+
+  <!-- INHALT -->
+  <div class="content">
+    <div class="section">
+      <div class="address-block">
+        <strong>Rechnungsempfänger</strong><br />
+        <%= customer.companyName %><br />
+        <%= customer.preName %> <%= customer.lastName %><br />
+        <%= customer.street %> <%= customer.streetNumber %><br />
+        <%= customer.postcode %> <%= customer.town %><br />
+        <%= customer.country %>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">RECHNUNG Nr. <%= invoice.number %></div>
+      <p>Meine Leistungen stelle ich Ihnen wie folgt in Rechnung:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>POS.</th>
+            <th>Beschreibung</th>
+            <th>Gesamt €</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>Beratung / Dienstleistung</td>
+            <td><%= Number(invoice.invAmount).toFixed(2) %> €</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="totals">
+      Zwischensumme (Netto): <%= Number(invoice.invAmount).toFixed(2) %> €<br />
+      Umsatzsteuer 19 %: <%= Number(invoice.vatAmount).toFixed(2) %> €<br />
+      <strong>Gesamtbetrag: <%= (Number(invoice.invAmount) + Number(invoice.vatAmount)).toFixed(2) %> €</strong>
+    </div>
+
+    <div class="section" style="margin-top: 30px;">
+      Ich bitte um Überweisung des Rechnungsbetrags innerhalb von 14 Tagen nach Rechnungseingang. Als Verwendungszweck geben Sie bitte Ihre Rechnungsnummer an.<br />
+      <br />
+      Mit freundlichen Grüßen<br /><br />
+      <strong><%= biller.preName %> <%= biller.lastName %></strong>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div>
+      <strong>Kontakt</strong><br />
+      <%= biller.preName %> <%= biller.lastName %><br />
+      Tel.: -- <br />
+      E-Mail: -- <br />
+    </div>
+    <div>
+      <strong>Bankverbindung</strong><br />
+      IBAN: DE12 3456 7890 1234 5678 00<br />
+      BIC: ABCDDEFFXXX
+    </div>
+    <div>
+      <strong>Anschrift</strong><br />
+      <%= biller.street %> <%= biller.streetNumber %><br />
+      <%= biller.postcode %> <%= biller.town %><br />
+    </div>
+  </div>
+</body>
+</html>
