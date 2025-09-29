@@ -40,7 +40,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 
           autoLoadEntities: true,
 
-          synchronize: true,
+          synchronize: !isProd,
 
           logging: isProd ? ['error', 'warn'] : ['query', 'error', 'warn'],
         };

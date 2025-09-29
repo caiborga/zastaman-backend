@@ -39,8 +39,6 @@ export class BillerService {
       where: { user: { id: userId } },
     });
 
-    console.log('biller', biller);
-
     if (biller?.preName) {
       return biller;
     } else {

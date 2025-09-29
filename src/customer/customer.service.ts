@@ -47,6 +47,9 @@ export class CustomerService {
     return this.customerRepository.find({
       where: { biller: { id: user.biller.id } },
       relations: ['biller'],
+      order: {
+        lastName: 'ASC',
+      },
     });
   }
 

@@ -33,10 +33,6 @@ export class PdfService {
       throw new NotFoundException('Biller not found');
     }
 
-    console.log('invoice', invoice);
-    console.log('customer', customer);
-    console.log('biller', biller);
-
     const doc = new PDFDocument();
     const buffers = [];
 
@@ -143,9 +139,6 @@ export class PdfService {
       biller,
     });
 
-    console.log('invoice', invoice);
-    console.log('customer', customer);
-    console.log('biller', biller);
 
     const browser = await puppeteer.launch({
       headless: 'shell',
