@@ -5,6 +5,9 @@ import { CustomerService } from 'src/customer/customer.service';
 import { InvoiceService } from 'src/invoice/invoice.service';
 import { BillerService } from 'src/biller/biller.service';
 
+import * as puppeteerCore from 'puppeteer-core';
+import * as chromium from 'chrome-aws-lambda';
+
 @Injectable()
 export class PdfService {
   constructor(
@@ -15,7 +18,8 @@ export class PdfService {
 
   async generateInvoicePdf(invoiceId: number, userId: number): Promise<Buffer> {
     const invoice = await this.invoiceService.findOne(invoiceId, userId);
-    if (!invoice || !invoice.length) throw new NotFoundException('Invoice not found');
+    if (!invoice || !invoice.length)
+      throw new NotFoundException('Invoice not found');
 
     const customer = await this.customerService.findOne(invoice[0].customer);
     if (!customer) throw new NotFoundException('Customer not found');
@@ -40,17 +44,13 @@ export class PdfService {
     });
 
     const isProd = process.env.NODE_ENV === 'production';
-
-    const chromium = require('chrome-aws-lambda');
-    const puppeteer = isProd
-      ? require('puppeteer-core')
-      : require('puppeteer');
+    const puppeteer = isProd ? puppeteerCore : await import('puppeteer');
 
     const browser = await puppeteer.launch({
-      args: isProd ? chromium.args : ['--no-sandbox', '--disable-setuid-sandbox'],
-      executablePath: isProd
-        ? await chromium.executablePath
-        : undefined,
+      args: isProd
+        ? chromium.args
+        : ['--no-sandbox', '--disable-setuid-sandbox'],
+      executablePath: isProd ? await chromium.executablePath : undefined,
       headless: true,
     });
 
