@@ -15,10 +15,7 @@ export class PdfService {
 
   async generateInvoicePdf(invoiceId: number, userId: number): Promise<Buffer> {
     const invoice = await this.invoiceService.findOne(invoiceId, userId);
-
-    if (!invoice || !invoice.length) {
-      throw new NotFoundException('Invoice not found');
-    }
+    if (!invoice || !invoice.length) throw new NotFoundException('Invoice not found');
 
     const customer = await this.customerService.findOne(invoice[0].customer);
     if (!customer) throw new NotFoundException('Customer not found');
@@ -42,29 +39,20 @@ export class PdfService {
       biller,
     });
 
-    // Unterschiedliche Browser je nach Umgebung
     const isProd = process.env.NODE_ENV === 'production';
 
-    let browser;
+    const chromium = require('chrome-aws-lambda');
+    const puppeteer = isProd
+      ? require('puppeteer-core')
+      : require('puppeteer');
 
-    if (isProd) {
-      const puppeteer = require('puppeteer-core');
-      const chromium = require('chrome-aws-lambda');
-
-      browser = await puppeteer.launch({
-        args: chromium.args,
-        executablePath:
-          (await chromium.executablePath) || '/usr/bin/google-chrome',
-        headless: chromium.headless,
-      });
-    } else {
-      const puppeteer = require('puppeteer');
-
-      browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      });
-    }
+    const browser = await puppeteer.launch({
+      args: isProd ? chromium.args : ['--no-sandbox', '--disable-setuid-sandbox'],
+      executablePath: isProd
+        ? await chromium.executablePath
+        : undefined,
+      headless: true,
+    });
 
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
@@ -72,10 +60,10 @@ export class PdfService {
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
-      margin: { top: '0mm', bottom: '0mm', left: '0mm', right: '0mm' },
+      margin: { top: '1cm', bottom: '1cm', left: '1cm', right: '1cm' },
     });
 
     await browser.close();
-    return Buffer.from(pdfBuffer);
+    return pdfBuffer;
   }
 }
