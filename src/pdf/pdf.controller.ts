@@ -6,10 +6,7 @@ import {
   Res,
   Request,
 } from '@nestjs/common';
-import {
-  Response as ExpressResponse,
-  Request as ExpressRequest,
-} from 'express';
+import { Response as ExpressResponse } from 'express';
 import { PdfService } from './pdf.service';
 // import { CreatePdfDto } from './dto/create-pdf.dto';
 // import { UpdatePdfDto } from './dto/update-pdf.dto';
