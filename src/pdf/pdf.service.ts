@@ -5,8 +5,8 @@ import { CustomerService } from 'src/customer/customer.service';
 import { InvoiceService } from 'src/invoice/invoice.service';
 import { BillerService } from 'src/biller/biller.service';
 
-import * as puppeteerCore from 'puppeteer-core';
-import * as chromium from 'chrome-aws-lambda';
+const chromium = require('chrome-aws-lambda');
+const puppeteer = require('puppeteer-core');
 
 @Injectable()
 export class PdfService {
@@ -43,15 +43,11 @@ export class PdfService {
       biller,
     });
 
-    const isProd = process.env.NODE_ENV === 'production';
-    const puppeteer = isProd ? puppeteerCore : await import('puppeteer');
-
     const browser = await puppeteer.launch({
-      args: isProd
-        ? chromium.args
-        : ['--no-sandbox', '--disable-setuid-sandbox'],
-      executablePath: isProd ? await chromium.executablePath : undefined,
-      headless: true,
+      args: chromium.args,
+      executablePath: await chromium.executablePath || '/usr/bin/google-chrome',
+      headless: chromium.headless,
+      ignoreHTTPSErrors: true,
     });
 
     const page = await browser.newPage();
