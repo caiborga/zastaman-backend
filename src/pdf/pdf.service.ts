@@ -5,8 +5,8 @@ import { CustomerService } from 'src/customer/customer.service';
 import { InvoiceService } from 'src/invoice/invoice.service';
 import { BillerService } from 'src/biller/biller.service';
 
-import chromium from 'chrome-aws-lambda';
 import puppeteer from 'puppeteer-core';
+import { existsSync } from 'fs';
 
 @Injectable()
 export class PdfService {
@@ -28,17 +28,30 @@ export class PdfService {
     if (!biller) throw new NotFoundException('Biller not found');
 
     const templatePath = path.join(__dirname, 'templates', 'invoice.ejs');
-
-    const html = await ejs.renderFile(templatePath, {
-      invoice: invoice[0],
-      customer,
-      biller,
-    });
+    if (!existsSync(templatePath)) {
+      throw new Error(`Template not found at ${templatePath}`);
+    }
+    const html = await ejs.renderFile(
+      templatePath,
+      {
+        invoice: invoice[0],
+        customer,
+        biller,
+      },
+      { async: true },
+    );
 
     const browser = await puppeteer.launch({
-      args: chromium.args,
-      executablePath: await chromium.executablePath,
-      headless: chromium.headless,
+      headless: true,
+      executablePath: 'chrome',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-gpu',
+        '--no-zygote',
+        '--single-process',
+        '--disable-dev-shm-usage',
+      ],
     });
 
     const page = await browser.newPage();
