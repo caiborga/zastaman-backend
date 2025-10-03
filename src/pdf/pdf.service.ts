@@ -41,9 +41,30 @@ export class PdfService {
       { async: true },
     );
 
+    function resolveChromePath(): string {
+      const envs = [
+        process.env.PUPPETEER_EXECUTABLE_PATH,
+        process.env.GOOGLE_CHROME_BIN,
+        process.env.CHROME_BINARY,
+        process.env.CHROME_PATH,
+      ].filter(Boolean) as string[];
+      for (const p of envs) if (existsSync(p)) return p;
+
+      for (const bin of [
+        'chrome',
+        'google-chrome',
+        'chromium',
+        'chromium-browser',
+      ]) {
+        const r = spawnSync('which', [bin], { encoding: 'utf8' });
+        if (r.status === 0 && r.stdout.trim()) return r.stdout.trim();
+      }
+      throw new Error('Chrome executable not found');
+    }
+
     const browser = await puppeteer.launch({
       headless: true,
-      executablePath: 'chrome',
+      executablePath: resolveChromePath(),
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
