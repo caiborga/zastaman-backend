@@ -7,6 +7,23 @@ import { BillerService } from 'src/biller/biller.service';
 
 import puppeteer from 'puppeteer-core';
 import { existsSync } from 'fs';
+import { spawnSync } from 'child_process';
+
+function resolveChromePath(): string {
+  const envs = [
+    process.env.PUPPETEER_EXECUTABLE_PATH,
+    process.env.GOOGLE_CHROME_BIN,
+    process.env.CHROME_BINARY,
+    process.env.CHROME_PATH,
+  ].filter(Boolean) as string[];
+  for (const p of envs) if (existsSync(p)) return p;
+
+  for (const bin of ['chrome', 'google-chrome', 'chromium', 'chromium-browser']) {
+    const r = spawnSync('which', [bin], { encoding: 'utf8' });
+    if (r.status === 0 && r.stdout.trim()) return r.stdout.trim();
+  }
+  throw new Error('Chrome executable not found');
+}
 
 @Injectable()
 export class PdfService {
@@ -18,52 +35,33 @@ export class PdfService {
 
   async generateInvoicePdf(invoiceId: number, userId: number): Promise<Buffer> {
     const invoice = await this.invoiceService.findOne(invoiceId, userId);
-    if (!invoice || !invoice.length)
+    if (!invoice || !invoice.length) {
       throw new NotFoundException('Invoice not found');
+    }
 
     const customer = await this.customerService.findOne(invoice[0].customer);
-    if (!customer) throw new NotFoundException('Customer not found');
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
 
     const biller = await this.billerService.findByUser(userId);
-    if (!biller) throw new NotFoundException('Biller not found');
+    if (!biller) {
+      throw new NotFoundException('Biller not found');
+    }
 
     const templatePath = path.join(__dirname, 'templates', 'invoice.ejs');
     if (!existsSync(templatePath)) {
       throw new Error(`Template not found at ${templatePath}`);
     }
+
     const html = await ejs.renderFile(
       templatePath,
-      {
-        invoice: invoice[0],
-        customer,
-        biller,
-      },
+      { invoice: invoice[0], customer, biller },
       { async: true },
     );
 
-    function resolveChromePath(): string {
-      const envs = [
-        process.env.PUPPETEER_EXECUTABLE_PATH,
-        process.env.GOOGLE_CHROME_BIN,
-        process.env.CHROME_BINARY,
-        process.env.CHROME_PATH,
-      ].filter(Boolean) as string[];
-      for (const p of envs) if (existsSync(p)) return p;
-
-      for (const bin of [
-        'chrome',
-        'google-chrome',
-        'chromium',
-        'chromium-browser',
-      ]) {
-        const r = spawnSync('which', [bin], { encoding: 'utf8' });
-        if (r.status === 0 && r.stdout.trim()) return r.stdout.trim();
-      }
-      throw new Error('Chrome executable not found');
-    }
-
     const browser = await puppeteer.launch({
-      headless: true,
+      headless: true, // bei neuem puppeteer-core auch: 'new'
       executablePath: resolveChromePath(),
       args: [
         '--no-sandbox',
@@ -75,16 +73,26 @@ export class PdfService {
       ],
     });
 
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    try {
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: 'networkidle0' });
+      // Optional: Styles wie im Browser nutzen
+      // await page.emulateMediaType('screen');
 
-    const pdfBuffer = await page.pdf({
-      format: 'a4',
-      printBackground: true,
-      margin: { top: '1cm', bottom: '1cm', left: '1cm', right: '1cm' },
-    });
+      const pdfData = await page.pdf({
+        printBackground: true,
+        format: 'A4',
+        margin: { top: '12mm', right: '12mm', bottom: '12mm', left: '12mm' },
+      });
 
-    await browser.close();
-    return pdfBuffer;
+      // Kompatibel mit Buffer/Uint8Array/ArrayBuffer
+      const buffer: Buffer = Buffer.isBuffer(pdfData)
+        ? pdfData
+        : Buffer.from(pdfData as Uint8Array);
+
+      return buffer;
+    } finally {
+      await browser.close();
+    }
   }
 }
