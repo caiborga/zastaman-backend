@@ -56,14 +56,14 @@ export class UsersService {
 
     await this.vatRepository.save(vatRates);
 
-    const customerMocks = customers.map((customer) =>
-      this.customerRepository.create({
-        ...customer,
-        biller: savedBiller,
-      }),
-    );
+    // const customerMocks = customers.map((customer) =>
+    //   this.customerRepository.create({
+    //     ...customer,
+    //     biller: savedBiller,
+    //   }),
+    // );
 
-    await this.customerRepository.save(customerMocks);
+    // await this.customerRepository.save(customerMocks);
 
     return {
       id: savedUser.id,
